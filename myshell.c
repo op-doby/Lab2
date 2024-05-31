@@ -24,7 +24,23 @@ void execute(cmdLine *pCmdLine) {
         if (chdir(pCmdLine->arguments[1]) == -1) { 
             fprintf(stderr, "cd: %s: No such file or directory\n", pCmdLine->arguments[1]); 
         }
-    } 
+        //copied from chat :::::: DELETEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+    // }
+    //  else if (strcmp(pCmdLine->arguments[0], "alarm") == 0) { // Check if the command is "alarm"
+    //     pid_t pid = atoi(pCmdLine->arguments[1]); // Get the process ID from the argument
+    //     if (kill(pid, SIGCONT) == 0) { // Send SIGCONT signal to wake up the process
+    //         printf("Process %d woke up\n", pid);
+    //     } else {
+    //         perror("kill() error"); // Print error message if kill fails
+    //     }
+    // } else if (strcmp(pCmdLine->arguments[0], "blast") == 0) { // Check if the command is "blast"
+    //     pid_t pid = atoi(pCmdLine->arguments[1]); // Get the process ID from the argument
+    //     if (kill(pid, SIGKILL) == 0) { // Send SIGKILL signal to terminate the process
+    //         printf("Process %d terminated\n", pid);
+    //     } else {
+    //         perror("kill() error"); // Print error message if kill fails
+    //     } 
+    // }
     else {
         pid_t p = fork();
         if(p ==-1){
