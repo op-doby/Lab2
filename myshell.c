@@ -6,25 +6,18 @@
 #include <sys/wait.h>
 #include <limits.h>
 #include "LineParser.h"
-#include <fcntl.h>
 #include <asm-generic/fcntl.h>
+#include <linux/limits.h>
 
-//ps - report a snapshot of the current processes.
-//int kill(pid_t pid, int sig);
-// The kill() system call can be used to send any signal to any process group or process.
 
-       //If pid is positive, then signal sig is sent to the process with the ID specified by pid.
 
-       //If pid equals 0, then sig is sent to every process in the process group of the calling process.
-
-       //If  pid  equals  -1, then sig is sent to every process for which the calling process has permission to send signals,
-       //except for process 1 (init), but see below.
+int debug = 0;
 
 void execute(cmdLine *pCmdLine) {
 
     if (strcmp((*pCmdLine).arguments[0], "cd") == 0) { 
         if (chdir((*pCmdLine).arguments[1]) == -1) {  //arguments[1] is the path to the directory
-            fprintf(stderr, "cd: %s: No such file or directory\n", (*pCmdLine).arguments[1]); 
+            fprintf(stderr, "cd: No such file or directory\n", (*pCmdLine).arguments[1]); 
         }
     }
     //Arguments[0] is the command name
@@ -43,7 +36,6 @@ void execute(cmdLine *pCmdLine) {
             perror("ERROR: kill() failed\n"); 
         } 
     }
-    ///////quit ????? in the main 
     else {
         pid_t p = fork();
         if(p ==-1){
@@ -83,9 +75,11 @@ void execute(cmdLine *pCmdLine) {
                     _exit(1);
                 }
                 close(output_file);
-                }
-            fprintf(stderr, "PID: %d\n", getpid());
-            fprintf(stderr, "Executing command: %s\n", (*pCmdLine).arguments[0]);
+            }
+            if(debug){
+                fprintf(stderr, "PID: %d\n", getpid());
+                fprintf(stderr, "Executing command: %s\n", (*pCmdLine).arguments[0]);
+            }
             execvp((*pCmdLine).arguments[0], (*pCmdLine).arguments);
             perror("ERROR: execvp() failed\n"); // If execvp returns, it means an error occurred, and the current process was not replaced. 
             _exit(1); //Used in situations where the process needs to terminate immediately without 
@@ -96,19 +90,21 @@ void execute(cmdLine *pCmdLine) {
             if ((*pCmdLine).blocking) { // if blocking, wait for the child process to finish
                 int status; //stores the exit status of the child process
                 waitpid(p, &status, 0); // If blocking is false, the shell will not wait for the child process to finish.
-                //The  waitpid()  system  call  suspends  execution  of the calling thread until a child specified by pid argument has
-                //changed state.  By default, waitpid() waits only for terminated children, but this behavior is  modifiable  via  the
-                //options argument, as described below.
             }
         }
     }
 
 }
 
-int main(){
+int main(int argc, char **argv){
     char cwd[PATH_MAX]; 
     char input[2048]; 
     cmdLine *parsedLine;
+    for(int i=0; i<argc; i++){
+        if(strcmp(argv[i], "-d") == 0){
+            debug = 1;
+        }
+    }
 
     while(1){
         if(getcwd(cwd, sizeof(cwd))!=NULL){ // get current working directory
