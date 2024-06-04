@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <unistd.h>
+#include <asm-generic/signal.h>
 
 
 //ps - report a snapshot of the current processes.
@@ -20,27 +21,29 @@
        //except for process 1 (init), but see below.
 
 void execute(cmdLine *pCmdLine) {
-    if (strcmp(pCmdLine->arguments[0], "cd") == 0) { 
-        if (chdir(pCmdLine->arguments[1]) == -1) { 
-            fprintf(stderr, "cd: %s: No such file or directory\n", pCmdLine->arguments[1]); 
+    if (strcmp((*pCmdLine).arguments[0], "cd") == 0) { 
+        if (chdir((*pCmdLine).arguments[1]) == -1) { 
+            fprintf(stderr, "cd: %s: No such file or directory\n", (*pCmdLine).arguments[1]); 
         }
-        //copied from chat :::::: DELETEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-    // }
-    //  else if (strcmp(pCmdLine->arguments[0], "alarm") == 0) { // Check if the command is "alarm"
-    //     pid_t pid = atoi(pCmdLine->arguments[1]); // Get the process ID from the argument
-    //     if (kill(pid, SIGCONT) == 0) { // Send SIGCONT signal to wake up the process
-    //         printf("Process %d woke up\n", pid);
-    //     } else {
-    //         perror("kill() error"); // Print error message if kill fails
-    //     }
-    // } else if (strcmp(pCmdLine->arguments[0], "blast") == 0) { // Check if the command is "blast"
-    //     pid_t pid = atoi(pCmdLine->arguments[1]); // Get the process ID from the argument
-    //     if (kill(pid, SIGKILL) == 0) { // Send SIGKILL signal to terminate the process
-    //         printf("Process %d terminated\n", pid);
-    //     } else {
-    //         perror("kill() error"); // Print error message if kill fails
-    //     } 
-    // }
+    }
+    //TO DO: delete and add the rest of the commands
+    //Arguments[0] is the command name
+    pid_t pid = atoi((*pCmdLine).arguments[1]); // Get the process ID from the argument
+     else if (strcmp((*pCmdLine).arguments[0], "alarm") == 0) { // Check if the command is "alarm"
+        //pid_t pid = atoi((*pCmdLine).arguments[1]); 
+        if (kill(pid, SIGCONT) == 0) { // Send SIGCONT signal to wake up the process
+            printf("Process %d woke up\n", pid);
+        } else {
+            perror("ERROR: kill()"); 
+        }
+    } else if (strcmp((*pCmdLine).arguments[0], "blast") == 0) { // Check if the command is "blast"
+        //pid_t pid = atoi((*pCmdLine).arguments[1]); 
+        if (kill(pid, SIGKILL) == 0) { // Send SIGKILL signal to terminate the process
+            printf("Process %d terminated\n", pid);
+        } else {
+            perror("ERROR: kill()"); 
+        } 
+    }
     else {
         pid_t p = fork();
         if(p ==-1){
@@ -49,15 +52,15 @@ void execute(cmdLine *pCmdLine) {
         }
         if (p == 0) {
             fprintf(stderr, "PID: %d\n", getpid());
-            fprintf(stderr, "Executing command: %s\n", pCmdLine->arguments[0]);
-            execvp(pCmdLine->arguments[0], pCmdLine->arguments);
+            fprintf(stderr, "Executing command: %s\n", (*pCmdLine).arguments[0]);
+            execvp((*pCmdLine).arguments[0], (*pCmdLine).arguments);
             perror("execvp() error"); // If execvp returns, it means an error occurred, and the current process was not replaced. 
             _exit(1); //Used in situations where the process needs to terminate immediately without 
             //performing any cleanup, such as in the child process after a fork where performing such cleanup could be 
             //problematic or redundant.
         }
         else{
-            if (pCmdLine->blocking) { // if blocking, wait for the child process to finish
+            if ((*pCmdLine).blocking) { // if blocking, wait for the child process to finish
                 int status; //stores the exit status of the child process
                 waitpid(p, &status, 0); // If blocking is false, the shell will not wait for the child process to finish.
                 //The  waitpid()  system  call  suspends  execution  of the calling thread until a child specified by pid argument has
@@ -72,14 +75,15 @@ void execute(cmdLine *pCmdLine) {
 int main(){
     char cwd[PATH_MAX]; 
     char input[2048]; 
+    cmdLine *parsedLine;
 
     while(1){
-        if(getcwd(cwd, sizeof(cwd))!=NULL){
+        if(getcwd(cwd, sizeof(cwd))!=NULL){ // get current working directory
             printf("%s\n", cwd); 
             fflush(stdout);
         }
         else{
-            perror("getcwd() error"); // get current working directory
+            perror("getcwd() error"); 
             return 1; 
         }
         if(fgets(input, 2048, stdin)!=NULL){ // read input from the user
@@ -90,7 +94,7 @@ int main(){
             if (strcmp(input, "quit") == 0) {
                     break;
             }
-            cmdLine *parsedLine = parseCmdLines(input);
+            parsedLine = parseCmdLines(input);
             if(parsedLine == NULL){
                 perror("parseCmdLines() error");
                 continue;
